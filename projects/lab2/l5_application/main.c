@@ -32,7 +32,6 @@ static void led_task(void *pvParameters) {
     //  2) Set PIN register bit to 0 to turn ON LED (led may be active low)
     gpio_set_low(2, 3);
     vTaskDelay(500);
-
     //  3) Set PIN register bit to 1 to turn OFF LED
     gpio_set_high(2, 3);
     vTaskDelay(500);
