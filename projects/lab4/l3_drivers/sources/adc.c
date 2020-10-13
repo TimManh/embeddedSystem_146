@@ -1,6 +1,7 @@
 #include <stdint.h>
 
 #include "adc.h"
+#include "lpc40xx.h"
 
 #include "clock.h"
 #include "lpc40xx.h"
@@ -50,4 +51,10 @@ uint16_t adc__get_adc_value(adc_channel_e channel_num) {
   }
 
   return result;
+}
+
+void adc__enable_burst_mode(adc_channel_e channel_num) {
+  LPC_ADC->CR |= (1 << channel_num);
+  LPC_ADC->CR &= ~(7 << 24);
+  LPC_ADC->CR |= (1 << 16);
 }
