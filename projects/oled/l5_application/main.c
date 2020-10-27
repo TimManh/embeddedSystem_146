@@ -20,7 +20,7 @@
 
 #include "string.h"
 #include "uart_lab.h"
-
+char *test(char *newstring);
 /* ------------------------------- OLED ------------------------------- */
 void oled_task() {
   while (1) {
@@ -37,7 +37,13 @@ int main(void) {
   // sj2_cli__init();
 
   /* --------------------------------- Part 1 --------------------------------- */
-  oled_print("->CMPE146:RTOS<-");
+  char temp[] = "Nang Am Xa Dan";
+
+  // fprintf(stderr, "%s", temp);
+  oled_print(test(temp));
+  horizontal_scrolling();
+  delay__ms(5000);
+  horizontal_scrolling();
 
   while (1) {
   }

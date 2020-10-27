@@ -56,7 +56,8 @@ void oled_update();
 
 /* Horizontal Address Mode */
 void horizontal_addr_mode();
-
+/*Scolling in Horizontal*/
+void horizontal_scrolling();
 /**/
 void oled_print(char *message);
 

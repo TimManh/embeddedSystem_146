@@ -4,27 +4,35 @@
 /* ------------------------------- PIN CONFIG ------------------------------- */
 /* -------------------------------------------------------------------------- */
 
-/* Output [P1_22] ( ON<--(LOW)|(HIGH) -->OFF ) */
+/* ------------------------- Active CS for the OLED ------------------------- */
 void oled_CS() {
   gpio1__set_as_output(1, 22);
   gpio1__set_low(1, 22);
 }
+
+/* ------------------------ Deactive CS for the OLED ------------------------ */
 void oled_DS() {
+
   gpio1__set_as_output(1, 22);
   gpio1__set_high(1, 22);
 }
 
-/* SSP1_I/O Function PIN P0_7 | P0_9 | P1_25 */
+/* --------------------------- Config pin for oled -------------------------- */
 void config_oled_pin() {
+
+  // SCK of OLED
   gpio__construct_with_function(0, 7, GPIO__FUNCTION_2);
   gpio1__set_as_output(0, 7);
+
+  // MOSI
   gpio__construct_with_function(0, 9, GPIO__FUNCTION_2);
   gpio1__set_as_output(0, 9);
+
+  // pin 1.25 as GPIO function
   gpio__construct_with_function(1, 25, GPIO__FUNCITON_0_IO_PIN);
   gpio1__set_as_output(1, 25);
 }
-
-/* Command Buss P1_25(LOW) | Data Buss P1_25(HIGH) */
+/* Command Bus P1_25(LOW) | Data Bus P1_25(HIGH) */
 void oled_setC_bus() { gpio1__set_low(1, 25); }
 void oled_setD_bus() { gpio1__set_high(1, 25); }
 
@@ -48,7 +56,6 @@ void SPI_oled_initialization() {
   const uint32_t CPU_CLK = clock__get_core_clock_hz(); // 96-MHz
   for (uint8_t divider = 2; divider <= 254; divider += 2) {
     if ((CPU_CLK / divider) <= SSP1_clock_mhz) {
-      // fprintf(stderr, "LCD_CLK: %d \n", divider);
       break;
     }
     /* Setup PreScale Control[7:0] */
@@ -75,6 +82,7 @@ void oled__transfer_byte(uint8_t data_transfer) {
 /*=============================== Panel init()===============================
 *@brief:  Initial Oled Panel
 *@Note:   Please Check The Datasheet of Sequence of Operation
+          page 19/27
           * Require command_bus (ON)
 =============================================================================*/
 void panel_init() {
@@ -184,6 +192,8 @@ void oled_clear() {
 }
 /* -------------------------------------------------------------------------- */
 
+/* --------------------------- fill all oled pixel -------------------------- */
+
 void oled_fill() {
   for (int row = 0; row < 8; row++) {
     for (int column = 0; column < 128; column++) {
@@ -193,6 +203,9 @@ void oled_fill() {
 }
 
 /* -------------------------------------------------------------------------- */
+
+/* ------------------------------- update oled ------------------------------ */
+
 void oled_update() {
   horizontal_addr_mode();
   for (int row = 0; row < 8; row++) {
@@ -229,6 +242,21 @@ void horizontal_addr_mode() {
   oled__transfer_byte(0x07);
 }
 
+void horizontal_scrolling() {
+  oled_CS();
+  {
+    oled_setC_bus();
+    oled__transfer_byte(0x26);
+    oled__transfer_byte(0x00); // dummy byte
+    oled__transfer_byte(0x00); // start Page 0
+    oled__transfer_byte(0x07); // 5 frames
+    oled__transfer_byte(0x07); // end Page 7
+    oled__transfer_byte(0x00); // dummy byte 00
+    oled__transfer_byte(0xFF); // dummy byte FF
+    oled__transfer_byte(0x2F); // activate scrolling
+  }
+  oled_DS();
+}
 /*================================== oled print ===============================
 *@brief:  Using pointer to Print string
 *@Note:   Ready to Call on main.c (all initialization INCLUDED )
@@ -245,7 +273,6 @@ void oled_print(char *message) {
   /* Require This to initial al Pixel */
   oled_clear();
   oled_update();
-
   /* Use Lookup Table to search char and Display */
   display_char(message);
 
@@ -264,7 +291,6 @@ static function_pointer_char char_callback[127];
 *@Note:   Base in Ascii value to search the lookup table
 ==============================================================================*/
 void display_char(char *string) {
-  oled_CS();
   oled_setD_bus();
   for (int i = 0; i < strlen(string); i++) {
     /* Create + assign */
