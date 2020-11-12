@@ -34,16 +34,14 @@ int main(void) {
 
   /* ----------------------------- Initialization ----------------------------- */
   puts("Starting RTOS\n");
-  // sj2_cli__init();
 
   /* --------------------------------- Part 1 --------------------------------- */
-  char temp[] = "Nang Am Xa Dan";
 
-  // fprintf(stderr, "%s", temp);
-  oled_print(test(temp));
-  horizontal_scrolling();
-  delay__ms(5000);
-  horizontal_scrolling();
+
+  oled_print("Nang Am Xa Dan ", 0, init);
+  oled_print("check scrolling", 1, ninit);
+  oled_print("test", 2, ninit);
+  horizontal_scrolling(1, 2);
 
   while (1) {
   }

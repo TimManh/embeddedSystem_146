@@ -5,6 +5,7 @@
 /* -------------------------------------------------------------------------- */
 
 /* ------------------------- Active CS for the OLED ------------------------- */
+// NOTE: Refer to schematic
 void oled_CS() {
   gpio1__set_as_output(1, 22);
   gpio1__set_low(1, 22);
@@ -241,41 +242,89 @@ void horizontal_addr_mode() {
   oled__transfer_byte(0x00);
   oled__transfer_byte(0x07);
 }
-
-void horizontal_scrolling() {
+/*========================= Horizontal Scrolling Mode ========================
+*@brief:  Data will print onto screen horizontal  scrolling from right to left
+*@Note:   Please Check The Datasheet of Sequence of Operation
+          * Can be modified from left to right by reading reference on SSD1306
+          on page 31/64
+          * Require command_bus (ON)
+==============================================================================*/
+void horizontal_scrolling(page_start begin_page, page_start end_page) {
   oled_CS();
   {
     oled_setC_bus();
     oled__transfer_byte(0x26);
-    oled__transfer_byte(0x00); // dummy byte
-    oled__transfer_byte(0x00); // start Page 0
-    oled__transfer_byte(0x07); // 5 frames
-    oled__transfer_byte(0x07); // end Page 7
-    oled__transfer_byte(0x00); // dummy byte 00
-    oled__transfer_byte(0xFF); // dummy byte FF
-    oled__transfer_byte(0x2F); // activate scrolling
+    oled__transfer_byte(0x00);              // dummy byte
+    oled__transfer_byte(0x00 | begin_page); // start Page 0
+    oled__transfer_byte(0x07);              // 2 frames
+    oled__transfer_byte(0x00 | end_page);   // end Page 7
+    oled__transfer_byte(0x00);              // dummy byte 00
+    oled__transfer_byte(0xFF);              // dummy byte FF
+    oled__transfer_byte(0x2F);              // activate scrolling
   }
   oled_DS();
+}
+
+/*================================= New Line =================================
+*@brief:  Display String In Specific Line ( Pages Addressing Mode )
+*@Note:   Please Check The Datasheet Pages37
+          * Require command_bus (ON)
+          * Page Address range [0xB0 -- 0xB7]
+          * ONE colum = EIGHT seg
+          *
+_________________________________________________________
+|Colum0|Colum1|Colum2|Colum3|Colum4|Colum5|Colum6|Colum7|
+---------------------------------------------------------
+|8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg | --> Page0
+|8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg | --> Page1
+|8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg | --> Page2
+|8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg | --> Page3
+|8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg | --> Page4
+|8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg | --> Page5
+|8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg | --> Page6
+|8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg |8-seg | --> Page7
+==============================================================================*/
+// add parameter cho new line
+void new_line(uint8_t line_address) {
+  oled_setC_bus();
+  /* Page Add [0xB0-0xB7] */
+  oled__transfer_byte(0xB0 | line_address);
+  /*************************
+   * Pages Addressing mode
+   * --> Set Colum + SEG <--
+   *************************/
+  uint8_t start_SEG = 0x00;
+  uint8_t start_COLUM = 0x10;
+  oled__transfer_byte(start_SEG);
+  oled__transfer_byte(start_COLUM);
+
+  oled_setD_bus();
 }
 /*================================== oled print ===============================
 *@brief:  Using pointer to Print string
 *@Note:   Ready to Call on main.c (all initialization INCLUDED )
 ==============================================================================*/
-void oled_print(char *message) {
+void oled_print(char *message, page_start begin_page, lines init_verify) {
 
-  /* Hardware init + Table inti */
-  config_oled_pin();
-  SPI_oled_initialization();
-  char_array_table();
+  if (init_verify) {
 
-  oled_CS();
-  panel_init();
-  /* Require This to initial al Pixel */
-  oled_clear();
-  oled_update();
+    /* Hardware init + Table init */
+    config_oled_pin();
+    SPI_oled_initialization();
+    char_array_table();
+
+    oled_CS();
+    panel_init();
+    /* Require This to initial al Pixel */
+    oled_clear();
+    oled_update();
+
+  } else {
+    oled_CS();
+  }
+  new_line(begin_page);
   /* Use Lookup Table to search char and Display */
   display_char(message);
-
   oled_DS();
 }
 
