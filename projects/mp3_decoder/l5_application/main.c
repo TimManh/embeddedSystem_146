@@ -34,6 +34,7 @@ int main(void) {
 
   /* ----------------------------- Initialization ----------------------------- */
   puts("Starting RTOS\n");
+  fprintf(stderr, "%c", (char)178);
   char volume[16];
   char smallest_square = (char)128;
   char small_square = (char)129;
@@ -44,8 +45,6 @@ int main(void) {
   // fprintf(stderr, "%d", len);
 
   for (int i = 0; i < 14; i++) {
-    // strcat(volume, "v");
-    // volume[i] = 'v';
     if (i <= 2) {
       volume[i] = smallest_square;
     } else if (i <= 5 && i > 2) {
