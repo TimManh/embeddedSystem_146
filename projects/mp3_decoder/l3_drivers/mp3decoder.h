@@ -1,10 +1,10 @@
 
-#include "lpc40xx.h"
 #include "gpio.h"
 #include "gpio_lab.h"
+#include "lpc40xx.h"
+#include "lpc_peripherals.h"
 #include <stdio.h>
 #include <stdlib.h>
-const uint16_t VOLUME[10] = {0X7D7D, 0X6464, 0x4B4B, 0x3C3C, 0x3535, 0x3030, 0x2525, 0x2020, 0x1515};
 
 /* VS1053B SCI Registers */
 #define SCI_MODE 0x00
@@ -24,9 +24,6 @@ const uint16_t VOLUME[10] = {0X7D7D, 0X6464, 0x4B4B, 0x3C3C, 0x3535, 0x3030, 0x2
 #define SCI_AICTRL2 0x0E
 #define SCI_AICTRL3 0x0F
 
-/*TODO: Min Volume and Max Volume value*/
-// #define MAX_VOLUME 0x0000
-// #define MIN_VOLUME 0xFAFA
 /*----------------------------------------------------------------------------*/
 /*ANCHOR: This MP3 decoder use SSP0 as SPI bus to connect from MCU to decoder */
 /*----------------------------------------------------------------------------*/
@@ -87,7 +84,6 @@ void RST_OFF();
 /* -------------------------------------------------------------------------- */
 void mp3_setup_clock_info(uint32_t max_clock_mhz);
 
-
 /* -------------------------------------------------------------------------- */
 /*                        NOTE: Transfer Byte                                 */
 /* @brief: Transfer each byte from MCU to decoder                             */
@@ -106,25 +102,32 @@ void mp3_adjust_vol(uint16_t volume);
 
 /* -------------------------------------------------------------------------- */
 /*                        NOTE: Write using SCI                               */
-/* @brief: write data to SCI register                                         */
+/* @brief: write data to SCI's register                                       */
 /* @param: register value, data will be written                               */
 /* @return: void                                                              */
 /* -------------------------------------------------------------------------- */
-void mp3_write_sci(uint8_t reg_address,uint16_t data);
+void mp3_write_sci(uint8_t reg_address, uint16_t data);
 
 /* -------------------------------------------------------------------------- */
 /*                        NOTE: Read using SCI                                */
-/* @brief: read data to SCI register                                          */
+/* @brief: read data to SCI's register                                        */
 /* @param: register value                                                     */
 /* @return: data will be read                                                 */
 /* -------------------------------------------------------------------------- */
 uint16_t mp3_read_sci(uint8_t reg_address);
 
 /* -------------------------------------------------------------------------- */
-/*                       FIXME : Set up pins                                  */
+/*                        NOTE: Write data using SDI                          */
+/* @brief: read data to SDI register                                          */
+/* @param: data will be send every byte                                       */
+/* @return: void                                                              */
+/* -------------------------------------------------------------------------- */
+void mp3_write_sdi(uint8_t data);
+
+/* -------------------------------------------------------------------------- */
+/*                       NOTE : Set up pins                                  */
 /* @brief: Set up pin that connect to the decoder                             */
 /* @param: NA                                                                 */
 /* @return: void                                                              */
 /* -------------------------------------------------------------------------- */
 void mp3_setup();
-

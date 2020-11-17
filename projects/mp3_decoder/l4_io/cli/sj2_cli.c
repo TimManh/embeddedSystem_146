@@ -19,7 +19,7 @@ void sj2_cli__init(void) {
   static app_cli_s sj2_cli_struct;
   sj2_cli_struct = app_cli__initialize(4, sj2_cli__output_function, separator);
 
-  /* ------------ Need static struct that does not go out of scope ------------ */
+  // Need static struct that does not go out of scope
   static app_cli__command_s crash = {.command_name = "crash",
                                      .help_message_for_command =
                                          "Deliberately crashes the system to demonstrate how to debug a crash",
@@ -33,18 +33,34 @@ void sj2_cli__init(void) {
                                              "Outputs list of RTOS tasks, CPU and stack usage.\n"
                                              "tasklist <time>' will display CPU utilization within this time window.",
                                          .app_cli_handler = cli__task_list};
-  /* Bang handler cli_handlers.h */
-  /* -------------------------------------------------------------------------- */
-  static app_cli__command_s bang = {.command_name = "taskcontrol",
-                                    .help_message_for_command = "Suspend or Resume <Task Name>",
-                                    .app_cli_handler = cli__bang_handler};
+
   /* -------------------------------------------------------------------------- */
 
-  /* ------------ Add your CLI commands in descending sorted order ------------ */
+  static app_cli__command_s play = {.command_name = "play",
+                                    .help_message_for_command = "Allows you to play a mp3 file by passing name \n",
+                                    .app_cli_handler = cli__mp3_play};
+
+  /* ------------------------- My own handler------------------------- */
+
+  static app_cli__command_s Phuong_cli_struct = {.command_name = "taskcontrol",
+                                                 .help_message_for_command =
+                                                     "This task will suspend or resume the task of your choice\n"
+                                                     "Usage:  taskcontrol suspend/resume taskname\n",
+                                                 .app_cli_handler = cli__phuong_handler};
+
+  // TODO: Add the CLI handler:
+
+  /* ----------------------------- Phuong HANDLER ----------------------------- */
+
+  app_cli__add_command_handler(&sj2_cli_struct, &Phuong_cli_struct);
+  app_cli__add_command_handler(&sj2_cli_struct, &play);
+
+  /* ----------------------------- end of my code ----------------------------- */
+
+  // Add your CLI commands in descending sorted order
   app_cli__add_command_handler(&sj2_cli_struct, &task_list);
   app_cli__add_command_handler(&sj2_cli_struct, &i2c);
   app_cli__add_command_handler(&sj2_cli_struct, &crash);
-  app_cli__add_command_handler(&sj2_cli_struct, &bang);
 
   // In case other tasks are hogging the CPU, it would be useful to run the CLI
   // at high priority to at least be able to see what is going on
