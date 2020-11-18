@@ -167,10 +167,20 @@ void turn_on_lcd() {
   oled_update();
 
   /* Print ("CMPE") */
-  char_C();
+  char_T();
+  char_I();
+  char_M();
+  char_space();
   char_M();
   char_P();
+  char_3();
+  char_space();
+  char_P();
+  char_L();
+  char_A();
+  char_Y();
   char_E();
+  char_R();
 
   oled_DS();
   printf("LCD Should Turn-Successfully\n");
@@ -184,24 +194,12 @@ void turn_on_lcd() {
 *@note:   Clear + Fill  --> SET BitMap
           Update        --> Transfer BitMap to VDRAM
 ===============================================================================*/
-void oled_clear() {
-  for (int row = 0; row < 8; row++) {
-    for (int column = 0; column < 128; column++) {
-      bitmap_[row][column] = 0x00;
-    }
-  }
-}
+void oled_clear() { memset(bitmap_, 0x00, sizeof(bitmap_)); }
 /* -------------------------------------------------------------------------- */
 
 /* --------------------------- fill all oled pixel -------------------------- */
 
-void oled_fill() {
-  for (int row = 0; row < 8; row++) {
-    for (int column = 0; column < 128; column++) {
-      bitmap_[row][column] = 0xFF;
-    }
-  }
-}
+void oled_fill() { memset(bitmap_, 0xFF, sizeof(bitmap_)); }
 
 /* -------------------------------------------------------------------------- */
 
@@ -300,6 +298,77 @@ void new_line(uint8_t line_address) {
 
   oled_setD_bus();
 }
+static void DC_toggle_command() { gpio1__set_low(1, 25); }
+static void DC_toggle_data() { gpio1__set_high(1, 25); }
+
+void set_column_start(oled_column column_number) {
+  oled_CS();
+  {
+    DC_toggle_command();
+    oled__transfer_byte(0x10 | column_number);
+    oled__transfer_byte(0x00);
+  }
+  oled_CS();
+}
+void set_page_start(oled_page page_number_oled) {
+  oled_CS();
+  {
+    DC_toggle_command();
+    oled__transfer_byte(0xB0 | page_number_oled);
+  }
+  oled_DS();
+}
+/* ---------------------------- White out screen ---------------------------- */
+void white_Out(page_start page_num, white_out_page single_or_all) {
+  oled_CS();
+  {
+    DC_toggle_command();
+    oled__transfer_byte(0xB0); // set up column
+    oled__transfer_byte(0x10);
+    oled__transfer_byte(0x00);
+    if (single_or_all) {
+      set_page_start(0x00);
+      oled_CS();
+      DC_toggle_data();
+      for (int i = 0; i < 128; i++) {
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+      }
+    } else {
+      set_page_start(page_num);
+      oled_CS();
+      DC_toggle_data();
+      for (int i = 0; i < 16; i++) {
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+        oled__transfer_byte(0x00);
+      }
+    }
+  }
+  oled_DS();
+}
+
+/* -------------------------- Deactivate Scrolling -------------------------- */
+
+void deactivate_horizontal_scrolling() {
+  oled_CS();
+  {
+    DC_toggle_command();
+    oled__transfer_byte(0x2E);
+  }
+  oled_DS();
+}
 /*================================== oled print ===============================
 *@brief:  Using pointer to Print string
 *@Note:   Ready to Call on main.c (all initialization INCLUDED )
@@ -349,6 +418,32 @@ void display_char(char *string) {
   }
 }
 
+/* ------------------------ NOTE :Material Reference ------------------------ */
+
+// uint8_t cursor1;
+// void display(char *str) {
+// oled_CS();
+// {
+// DC_toggle_command();
+// SSP1__exchange_byte_lab(0xB0);
+// SSP1__exchange_byte_lab(0x10);
+// SSP1__exchange_byte_lab(0x00);
+// DC_toggle_data();
+// for (int i = 0; i < strlen(str); i++) {
+//   if (str[i] == '\n') {
+//     if (cursor1 == 7) {
+//       cursor1 = 0;
+//     }
+//     cursor1++;
+//     new_line(cursor1);
+//     continue;
+//   }
+// function_pointer_char oled_handler = char_callback[(int)str[0]];
+// oled_handler();
+// }
+// }
+// oled_DS();
+// }
 /**********************************************************
  * Casting to get the ASCII value of the char             *
  * ---> Assign ASCII value to index of Call Back Array    *

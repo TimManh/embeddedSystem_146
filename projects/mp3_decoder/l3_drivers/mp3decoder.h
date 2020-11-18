@@ -1,4 +1,5 @@
 
+#include "cli_handlers.h"
 #include "gpio.h"
 #include "gpio_lab.h"
 #include "lpc40xx.h"
@@ -27,7 +28,8 @@
 /*----------------------------------------------------------------------------*/
 /*ANCHOR: This MP3 decoder use SSP0 as SPI bus to connect from MCU to decoder */
 /*----------------------------------------------------------------------------*/
-
+/* (P2_0) Input */
+bool get_DREQ_HighActive();
 /* -------------------------------------------------------------------------- */
 /*                        NOTE: Chip select SCI mode                          */
 /* @brief: activate CS pin(set to low) and select slave to use                */
@@ -131,3 +133,6 @@ void mp3_write_sdi(uint8_t data);
 /* @return: void                                                              */
 /* -------------------------------------------------------------------------- */
 void mp3_setup();
+
+char *remove_dot_mp3(char *current_song);
+char *genre_decoder(uint8_t genre);

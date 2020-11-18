@@ -64,7 +64,7 @@ app_cli_status_e cli__phuong_handler(app_cli__argument_t argument, sl_string_t u
 /*                                 MP3 HANDLER                                */
 /* -------------------------------------------------------------------------- */
 
-extern QueueHandle_t Q_trackname;
+extern QueueHandle_t music_Q;
 app_cli_status_e cli__mp3_play(app_cli__argument_t argument, sl_string_t user_input_minus_command_name,
                                app_cli__print_string_function cli_output) {
   // user_input_minus_command_name is actually a 'char *' pointer type
@@ -75,7 +75,7 @@ app_cli_status_e cli__mp3_play(app_cli__argument_t argument, sl_string_t user_in
   if (sl_string__get_length(user_input_minus_command_name) < 63) {
     strncpy(trackname, user_input_minus_command_name, 64);
     printf("before send to Q\n");
-    xQueueSend(Q_trackname, trackname, portMAX_DELAY);
+    xQueueSend(music_Q, trackname, portMAX_DELAY);
     printf("Sent %s over to the Q_songname\n", user_input_minus_command_name);
   } else {
     printf("Error: please enter in a song name less than 64 characters \n");

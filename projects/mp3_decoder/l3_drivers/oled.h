@@ -8,6 +8,36 @@
 #include <string.h>
 
 typedef enum {
+  OLED__PAGE0 = 0x00,
+  OLED__PAGE1 = 0x01,
+  OLED__PAGE2 = 0x02,
+  OLED__PAGE3 = 0x03,
+  OLED__PAGE4 = 0x04,
+  OLED__PAGE5 = 0x05,
+  OLED__PAGE6 = 0x06,
+  OLED__PAGE7 = 0x07,
+} oled_page;
+
+typedef enum {
+  OLED__COLUMN0 = 0x00,
+  OLED__COLUMN1 = 0x01,
+  OLED__COLUMN2 = 0x02,
+  OLED__COLUMN3 = 0x03,
+  OLED__COLUMN4 = 0x04,
+  OLED__COLUMN5 = 0x05,
+  OLED__COLUMN6 = 0x06,
+  OLED__COLUMN7 = 0x07,
+  OLED__COLUMN8 = 0x08,
+  OLED__COLUMN9 = 0x09,
+  OLED__COLUMN10 = 0x0A,
+  OLED__COLUMN11 = 0x0B,
+  OLED__COLUMN12 = 0x0C,
+  OLED__COLUMN13 = 0x0D,
+  OLED__COLUMN14 = 0x0E,
+  OLED__COLUMN15 = 0x0F,
+} oled_column;
+
+typedef enum {
   page_0,
   page_1,
   page_2,
@@ -22,6 +52,8 @@ typedef enum {
   ninit,
   init,
 } lines;
+
+typedef enum { single_page = 0, all_pages } white_out_page;
 /* -------------------------------------------------------------------------- */
 /* ------------------------- Declaration + Power on ------------------------- */
 
@@ -55,6 +87,11 @@ void panel_init();
 void turn_on_lcd();
 
 /* -------------------------------------------------------------------------- */
+/* ---------------------------- Set page + column --------------------------- */
+
+void set_column_start(oled_column column_number);
+void set_page_start(oled_page page_number_oled);
+/* -------------------------------------------------------------------------- */
 /* ----------------------- Clear + Fill Update Screen ----------------------- */
 
 /* Set Bit Map with 0x00  */
@@ -71,14 +108,23 @@ void oled_update();
 
 /* Horizontal Address Mode */
 void horizontal_addr_mode();
+
 /*Scolling in Horizontal*/
 void horizontal_scrolling(page_start begin_page, page_start end_page);
 
 /* ------------- Generate new line when it finish the paragraph ------------- */
 
 void new_line(uint8_t line_address);
-/**/
+
+/*------------------------------Print onto lcd--------------------------------*/
 void oled_print(char *message, page_start begin_page, lines init_verify);
+
+/* ---------------------------- White out screen ---------------------------- */
+void white_Out(page_start page_num, white_out_page single_or_all);
+
+/* -------------------------- Deactivate Scrolling -------------------------- */
+
+void deactivate_horizontal_scrolling();
 
 /* -------------------------------------------------------------------------- */
 /* --------------------------- LOOK UP char Array --------------------------- */
@@ -94,7 +140,7 @@ void char_array_table();
 
 /* Use Lookup Table to search char and Display */
 void display_char(char *string);
-
+void display(char *str);
 /* ----------------------------- Covert to Pixel ---------------------------- */
 
 void char_A();
