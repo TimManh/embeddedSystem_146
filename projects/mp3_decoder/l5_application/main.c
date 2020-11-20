@@ -86,19 +86,21 @@ TaskHandle_t player_handle;
 
 void main() {
 
-  /* ---------------------- Initializtion and set up pins --------------------- */
+  /* ---------------------- Initialization and set up pins --------------------- */
+  populate_list_song();
   gpio1__set_as_input(1, 15);
   gpio1__set_as_input(1, 19);
   gpio__construct_with_function(0, 6, GPIO__FUNCITON_0_IO_PIN);
-  gpio__construct_with_function(0, 6, GPIO__FUNCITON_0_IO_PIN);
+  gpio__construct_with_function(0, 8, GPIO__FUNCITON_0_IO_PIN);
 
-  populate_list_song();
   fprintf(stderr, "total song: %d \n", total_of_songs());
   mp3_setup();
   oled_print("TIM MP3 PLAYER", 3, init);
   horizontal_scrolling(3, 3);
   delay__ms(3200);
   white_Out(3, 1);
+  oled_clear();
+  oled_update();
   populate_song_no_mp3();
   display_list_of_song();
   sj2_cli__init();
@@ -134,30 +136,18 @@ void main() {
   xTaskCreate(move_down_task, "move down", (1024 * 2) / sizeof(void *), NULL, PRIORITY_MEDIUM, NULL);
   vTaskStartScheduler();
 }
+/* -------------------------------------------------------------------------- */
+/*                      INTERRUPT SERVICE ROUTINE SECTION                     */
+/* -------------------------------------------------------------------------- */
+
+void pause_isr() { xSemaphoreGiveFromISR(pause, NULL); }
+void next_song_isr() { xSemaphoreGiveFromISR(next, NULL); }
+void volume_control_isr() { xSemaphoreGiveFromISR(vol_up, NULL); }
+void move_down_isr() { xSemaphoreGiveFromISR(move_down, NULL); }
 
 /* -------------------------------------------------------------------------- */
 /*                           SECTION DEFINITION FUNC                          */
 /* -------------------------------------------------------------------------- */
-
-void pause_task() {
-  while (1) {
-    if (xSemaphoreTake(pause, portMAX_DELAY)) {
-      if (play_pause) {
-        white_Out(OLED__PAGE0, single_page);
-        oled_print("Paused", OLED__PAGE0, ninit);
-        vTaskSuspend(player_handle);
-        deactivate_horizontal_scrolling();
-        play_pause = false;
-      } else {
-        white_Out(OLED__PAGE0, single_page);
-        oled_print("Playing...", OLED__PAGE0, ninit);
-        vTaskResume(player_handle);
-        horizontal_scrolling(OLED__PAGE1, OLED__PAGE1);
-        play_pause = true;
-      }
-    }
-  }
-}
 
 void reader_task() {
 
@@ -198,6 +188,26 @@ void reader_task() {
         f_close(&file);
       } else {
         fprintf(stderr, "Failed to open the file");
+      }
+    }
+  }
+}
+
+void pause_task() {
+  while (1) {
+    if (xSemaphoreTake(pause, portMAX_DELAY)) {
+      if (play_pause) {
+        white_Out(OLED__PAGE0, single_page);
+        oled_print("Paused", OLED__PAGE0, ninit);
+        vTaskSuspend(player_handle);
+        deactivate_horizontal_scrolling();
+        play_pause = false;
+      } else {
+        white_Out(OLED__PAGE0, single_page);
+        oled_print("Playing...", OLED__PAGE0, ninit);
+        vTaskResume(player_handle);
+        horizontal_scrolling(OLED__PAGE1, OLED__PAGE1);
+        play_pause = true;
       }
     }
   }
@@ -422,11 +432,3 @@ void clear_number_of_page(uint8_t number_of_page) {
     white_Out(i, single_page);
   }
 }
-/* -------------------------------------------------------------------------- */
-/*                      INTERRUPT SERVICE ROUTINE SECTION                     */
-/* -------------------------------------------------------------------------- */
-
-void pause_isr() { xSemaphoreGiveFromISR(pause, NULL); }
-void next_song_isr() { xSemaphoreGiveFromISR(next, NULL); }
-void volume_control_isr() { xSemaphoreGiveFromISR(vol_up, NULL); }
-void move_down_isr() { xSemaphoreGiveFromISR(move_down, NULL); }

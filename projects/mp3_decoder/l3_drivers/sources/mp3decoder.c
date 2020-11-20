@@ -21,16 +21,14 @@ const uint16_t VOLUME[10] = {0X7D7D, 0X6464, 0x4B4B, 0x3C3C, 0x3535, 0x3030, 0x2
 /* -------------------------------------------------------------------------- */
 static void mp3_max_clock(uint32_t SPI_clock) {
   SPI_clock = SPI_clock * 1000 * 1000;
+  uint8_t divider = 2;
   /* c) Setup prescalar register to be <= SPI_clock-(Input) */
   const uint32_t CPU_CLK = clock__get_core_clock_hz(); // 96-MHz
-  for (uint8_t divider = 2; divider <= 254; divider += 2) {
-    if ((CPU_CLK / divider) <= SPI_clock) {
-      // fprintf(stderr, "Pre_Scale: %d \n", divider);
-      break;
-    }
-    /* Setup PreScale Control[7:0] */
-    LPC_SSP0->CPSR = divider;
+  while (SPI_clock < (CPU_CLK / divider) && divider <= 254) {
+    divider += 2;
   }
+  /* Setup PreScale Control[7:0] */
+  LPC_SSP0->CPSR = divider;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -285,6 +283,12 @@ void mp3_setup() {
   uint16_t mp3_stat = mp3_read_sci(SCI_STATUS);
   uint16_t mp3_ver = (mp3_stat >> 4) & 0x000F;
   fprintf(stderr, "MP3 decoder version: %d \n", mp3_ver);
+
+  uint16_t mp3_clk = mp3_read_sci(SCI_CLOCKF);
+  delay__ms(100);
+  mp3_write_sci(SCI_CLOCKF, 0x6000);
+  uint16_t mp3_clk_2 = mp3_read_sci(SCI_CLOCKF);
+  uint16_t mp3mode = mp3_read_sci(SCI_MODE);
 
   /* -------------------------------------------------------------------------- */
   /*                           Check Clock of VS1053                            */
