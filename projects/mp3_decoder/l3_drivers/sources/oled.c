@@ -251,6 +251,7 @@ void horizontal_scrolling(page_start begin_page, page_start end_page) {
   oled_CS();
   {
     oled_setC_bus();
+    oled__transfer_byte(0x2E);
     oled__transfer_byte(0x26);
     oled__transfer_byte(0x00);              // dummy byte
     oled__transfer_byte(0x00 | begin_page); // start Page 0
@@ -259,6 +260,31 @@ void horizontal_scrolling(page_start begin_page, page_start end_page) {
     oled__transfer_byte(0x00);              // dummy byte 00
     oled__transfer_byte(0xFF);              // dummy byte FF
     oled__transfer_byte(0x2F);              // activate scrolling
+  }
+  oled_DS();
+}
+// FIXME
+void zoom_in_mode() {
+  oled_CS();
+  {
+    oled_setC_bus();
+    oled__transfer_byte(0xD6);
+    oled__transfer_byte(0x01); // set blinking mode and 16 frames
+    // oled__transfer_byte(0x00 | begin_page); // start Page 0
+    // oled__transfer_byte(0xFF);              // 2 frames
+    // oled__transfer_byte(0x00 | end_page);   // end Page 7
+    // oled__transfer_byte(0x00);              // dummy byte 00
+    // oled__transfer_byte(0xFF);              // dummy byte FF
+    // oled__transfer_byte(0x2F);              // activate scrolling
+  }
+  oled_DS();
+}
+void disable_zoom_in_mode() {
+  oled_CS();
+  {
+    oled_setC_bus();
+    oled__transfer_byte(0xD6);
+    oled__transfer_byte(0x00); // set blinking mode and 16 frames
   }
   oled_DS();
 }

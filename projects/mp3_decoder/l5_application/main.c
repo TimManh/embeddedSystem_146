@@ -95,9 +95,14 @@ void main() {
 
   fprintf(stderr, "total song: %d \n", total_of_songs());
   mp3_setup();
-  oled_print("TIM MP3 PLAYER", 3, init);
-  horizontal_scrolling(3, 3);
-  delay__ms(3200);
+  oled_print("TIM MP3 PLAYER", 2, init);
+
+  zoom_in_mode();
+  horizontal_scrolling(2, 2);
+  // blinking_mode();
+  delay__ms(6000);
+  disable_zoom_in_mode();
+  // disable_blinking_mode();
   white_Out(3, 1);
   oled_clear();
   oled_update();
@@ -157,7 +162,7 @@ void reader_task() {
   while (1) {
     if (xQueueReceive(music_Q, song_name, portMAX_DELAY)) {
       white_Out(OLED__PAGE0, single_page);
-      oled_print("Playing...", OLED__PAGE0, ninit);
+      oled_print("Now Playing:", OLED__PAGE0, ninit);
       /* -------------------------------- OPEN FILE ------------------------------- */
       const char *filename = song_name;
       FIL file; // create object file
@@ -204,7 +209,7 @@ void pause_task() {
         play_pause = false;
       } else {
         white_Out(OLED__PAGE0, single_page);
-        oled_print("Playing...", OLED__PAGE0, ninit);
+        oled_print("Now Playing:", OLED__PAGE0, ninit);
         vTaskResume(player_handle);
         horizontal_scrolling(OLED__PAGE1, OLED__PAGE1);
         play_pause = true;
@@ -240,10 +245,10 @@ void next_song_task() {
         xQueueSend(music_Q, song, portMAX_DELAY);
 
         white_Out(OLED__PAGE0, single_page);
-        oled_print("Playing...", OLED__PAGE0, ninit);
+        oled_print("Now Playing:", OLED__PAGE0, ninit);
       } else {
         white_Out(OLED__PAGE0, single_page);
-        oled_print("Playing...", OLED__PAGE0, ninit);
+        oled_print("Now Playing:", OLED__PAGE0, ninit);
         xSemaphoreGive(previous);
       }
       vTaskDelay(1000);
@@ -262,7 +267,7 @@ void previous_song_task() {
       cursor_main--;
       char *song = get_songs_name(cursor_main);
       white_Out(OLED__PAGE0, single_page);
-      oled_print("Playing...", OLED__PAGE0, ninit);
+      oled_print("Now Playing:", OLED__PAGE0, ninit);
 
       xQueueSend(music_Q, song, portMAX_DELAY);
     }
@@ -306,11 +311,20 @@ uint8_t cursor_for_scrolling = 0;
 void move_down_task() {
   while (1) {
     if (xSemaphoreTake(move_down, portMAX_DELAY)) {
+      // deactivate_horizontal_scrolling();
       if (cursor_for_scrolling == 8) {
         cursor_for_scrolling = 0;
         white_Out(0, all_pages);
         display_list_of_song();
       }
+      // blinking_mode();
+      if (cursor_for_scrolling != 0) {
+        deactivate_horizontal_scrolling();
+        white_Out(cursor_for_scrolling - 1, single_page);
+        oled_print(list_song_without_mp3[cursor_main - 1], cursor_for_scrolling - 1, ninit);
+      }
+      // white_Out(0, all_pages);
+      // display_list_of_song();
       horizontal_scrolling(cursor_for_scrolling, cursor_for_scrolling);
       if (gpio1__get_level(1, 19)) {
         /**
@@ -412,6 +426,7 @@ void display_list_of_song() {
     if (i == total_of_songs()) {
       break;
     }
+    // sprintf(list_song_without_mp3[i], strcat(" ", list_song_without_mp3[i]));
     char *song = list_song_without_mp3[i];
     // song_name_without_dot_mp3 = remove_dot_mp3(song);
     oled_print(song, oled_page_counter, ninit);

@@ -111,7 +111,8 @@ void horizontal_addr_mode();
 
 /*Scolling in Horizontal*/
 void horizontal_scrolling(page_start begin_page, page_start end_page);
-
+void zoom_in_mode();
+void disable_zoom_in_mode();
 /* ------------- Generate new line when it finish the paragraph ------------- */
 
 void new_line(uint8_t line_address);
