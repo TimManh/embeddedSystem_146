@@ -345,7 +345,14 @@ void move_down_task() {
       }
       /* -------------------------------------------------------------------------- */
       cursor_for_scrolling++;
-      cursor_main++;
+      if (cursor_main >= total_of_songs()) {
+        cursor_main = 0;
+        cursor_for_scrolling = 0;
+        white_Out(0, all_pages);
+        display_list_of_song();
+      } else {
+        cursor_main++;
+      }
     }
   }
 }
@@ -397,10 +404,6 @@ void read_meta(char *byte_128) {
 }
 
 void display_current_volume() {
-  char smallest_square = (char)128;
-  char small_square = (char)129;
-  char medium_square = (char)130;
-  char full_square = (char)131;
   white_Out(OLED__PAGE7, single_page);
   oled_print("Vol: ", OLED__PAGE7, ninit);
   for (int i = 0; i < volume_level; i++) {
