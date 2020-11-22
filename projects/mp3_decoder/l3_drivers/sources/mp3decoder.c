@@ -265,7 +265,7 @@ void mp3_setup() {
 
   RST_OFF(); // turn off the reset pin
 
-  mp3_setup_clock_info(3); // Insert 1MHz clock for SPI0 bus
+  mp3_setup_clock_info(1); // Insert 1MHz clock for SPI0 bus
 
   mp3_transfer_byte(0xFF); // Send dummy byte
 
@@ -274,7 +274,7 @@ void mp3_setup() {
   DDS();
 
   /* Set default volume */
-  mp3_adjust_vol(0x3535);
+  mp3_adjust_vol(0);
 
   /* -------------------------------------------------------------------------- */
   /*                           Check Status of VS1053                           */

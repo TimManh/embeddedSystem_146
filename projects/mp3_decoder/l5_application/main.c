@@ -32,6 +32,10 @@ char *song_name_without_dot_mp3;
 char list_song_without_mp3[32][128];
 uint16_t cursor_main = 0;
 volatile bool play_pause = true;
+char title_for_pause[16];
+char artist_for_pause[16];
+char genre_for_pause[16];
+char year_for_pause[16];
 /* -------------------------------------------------------------------------- */
 /*                            SECTION global Queue                            */
 /* -------------------------------------------------------------------------- */
@@ -80,6 +84,7 @@ void move_down_isr(void);
 /* -------------------------------------------------------------------------- */
 
 TaskHandle_t player_handle;
+TaskHandle_t play_pause_handle;
 /* -------------------------------------------------------------------------- */
 /*                                SECTION MAIN                                */
 /* -------------------------------------------------------------------------- */
@@ -96,13 +101,10 @@ void main() {
   fprintf(stderr, "total song: %d \n", total_of_songs());
   mp3_setup();
   oled_print("TIM MP3 PLAYER", 2, init);
-
   zoom_in_mode();
   horizontal_scrolling(2, 2);
-  // blinking_mode();
   delay__ms(6000);
   disable_zoom_in_mode();
-  // disable_blinking_mode();
   white_Out(3, 1);
   oled_clear();
   oled_update();
@@ -133,7 +135,7 @@ void main() {
 
   xTaskCreate(reader_task, "reader", (2024 * 4) / sizeof(void *), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(player_task, "player", (3096 * 4) / sizeof(void *), NULL, PRIORITY_MEDIUM, &player_handle);
-  xTaskCreate(pause_task, "pause", (1024 * 4) / sizeof(void *), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(pause_task, "pause", (1024 * 4) / sizeof(void *), NULL, PRIORITY_MEDIUM, &play_pause_handle);
   xTaskCreate(previous_song_task, "previous_song", (1024 * 2) / sizeof(void *), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(next_song_task, "next_song", (1024 * 2) / sizeof(void *), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volume_up_task, "volume up", (1024 * 2) / sizeof(void *), NULL, PRIORITY_MEDIUM, NULL);
@@ -161,6 +163,8 @@ void reader_task() {
   UINT br; // binary
   while (1) {
     if (xQueueReceive(music_Q, song_name, portMAX_DELAY)) {
+      // xTaskCreate(pause_task, "pause", (1024 * 4) / sizeof(void *), NULL, PRIORITY_MEDIUM, &play_pause_handle);
+      // int distance = 1;
       white_Out(OLED__PAGE0, single_page);
       oled_print("Now Playing:", OLED__PAGE0, ninit);
       /* -------------------------------- OPEN FILE ------------------------------- */
@@ -188,6 +192,7 @@ void reader_task() {
         /* --------------------------- Auto play next song -------------------------- */
         if (br == 0) {
           metamp3 = true; // read meta
+          // distance = 1;
           xSemaphoreGive(next);
         }
         f_close(&file);
@@ -201,15 +206,29 @@ void reader_task() {
 void pause_task() {
   while (1) {
     if (xSemaphoreTake(pause, portMAX_DELAY)) {
+      char *point_to_title = title_for_pause;
+      char *point_to_artist = artist_for_pause;
+      char *point_to_genre = genre_for_pause;
+      char *point_to_year = year_for_pause;
       if (play_pause) {
-        white_Out(OLED__PAGE0, single_page);
+        white_Out(OLED__PAGE0, all_pages);
+        // deactivate_horizontal_scrolling();
         oled_print("Paused", OLED__PAGE0, ninit);
+        oled_print(point_to_title, OLED__PAGE1, ninit);
+        horizontal_scrolling(OLED__PAGE1, OLED__PAGE1);
+        oled_print(point_to_artist, OLED__PAGE2, ninit);
+        oled_print(point_to_genre, OLED__PAGE3, ninit);
+        oled_print(point_to_year, OLED__PAGE4, ninit);
         vTaskSuspend(player_handle);
-        deactivate_horizontal_scrolling();
+
         play_pause = false;
       } else {
-        white_Out(OLED__PAGE0, single_page);
+        white_Out(OLED__PAGE0, all_pages);
         oled_print("Now Playing:", OLED__PAGE0, ninit);
+        oled_print(point_to_title, OLED__PAGE1, ninit);
+        oled_print(point_to_artist, OLED__PAGE2, ninit);
+        oled_print(point_to_genre, OLED__PAGE3, ninit);
+        oled_print(point_to_year, OLED__PAGE4, ninit);
         vTaskResume(player_handle);
         horizontal_scrolling(OLED__PAGE1, OLED__PAGE1);
         play_pause = true;
@@ -234,6 +253,7 @@ volatile bool debounce = true;
 void next_song_task() {
   while (1) {
     if (xSemaphoreTake(next, portMAX_DELAY)) {
+      // vTaskResume(play_pause_handle);
       if (!gpio1__get_level(1, 15)) {
         metamp3 = true;
         int total = total_of_songs();
@@ -259,6 +279,8 @@ void next_song_task() {
 void previous_song_task() {
   while (1) {
     if (xSemaphoreTake(previous, portMAX_DELAY)) {
+      // vTaskResume(play_pause_handle);
+
       metamp3 = true;
       int total = total_of_songs();
       if (cursor_main == 0) {
@@ -311,33 +333,30 @@ uint8_t cursor_for_scrolling = 0;
 void move_down_task() {
   while (1) {
     if (xSemaphoreTake(move_down, portMAX_DELAY)) {
-      // deactivate_horizontal_scrolling();
       if (cursor_for_scrolling == 8) {
         cursor_for_scrolling = 0;
         white_Out(0, all_pages);
         display_list_of_song();
       }
-      // blinking_mode();
       if (cursor_for_scrolling != 0) {
         deactivate_horizontal_scrolling();
         white_Out(cursor_for_scrolling - 1, single_page);
         oled_print(list_song_without_mp3[cursor_main - 1], cursor_for_scrolling - 1, ninit);
       }
-      // white_Out(0, all_pages);
-      // display_list_of_song();
       horizontal_scrolling(cursor_for_scrolling, cursor_for_scrolling);
       if (gpio1__get_level(1, 19)) {
         /**
          * cause this cursor will be move down again when we press the button combination
          * a hacky way is to deduct by 1 to move back to our intended location
          * */
-        // cursor_main--;
+        // vTaskResume(play_pause_handle);
         char *song = get_songs_name(cursor_main - 1);
-        // cursor_main = cursor_for_scrolling;
         xQueueSend(music_Q, song, portMAX_DELAY);
       }
 
       if (gpio1__get_level(1, 15)) {
+        // vTaskSuspend(player_handle);
+        // vTaskDelete(play_pause_handle);
         cursor_main = 0;
         cursor_for_scrolling = 0;
         clear_number_of_page(8);
@@ -345,7 +364,7 @@ void move_down_task() {
       }
       /* -------------------------------------------------------------------------- */
       cursor_for_scrolling++;
-      if (cursor_main >= total_of_songs()) {
+      if (cursor_main > total_of_songs()) {
         cursor_main = 0;
         cursor_for_scrolling = 0;
         white_Out(0, all_pages);
@@ -396,6 +415,11 @@ void read_meta(char *byte_128) {
       }
     }
   }
+  sprintf(title_for_pause, "%s", meta_data_mp3.Title);
+  sprintf(artist_for_pause, "%s", meta_data_mp3.Artist);
+  sprintf(genre_for_pause, "%s", genre_decoder(meta_data_mp3.genre));
+  sprintf(year_for_pause, "%s", meta_data_mp3.Year);
+
   oled_print(meta_data_mp3.Title, OLED__PAGE1, ninit);
   oled_print(meta_data_mp3.Artist, OLED__PAGE2, ninit);
   oled_print(genre_decoder(meta_data_mp3.genre), OLED__PAGE3, ninit);
@@ -404,8 +428,8 @@ void read_meta(char *byte_128) {
 }
 
 void display_current_volume() {
-  white_Out(OLED__PAGE7, single_page);
-  oled_print("Vol: ", OLED__PAGE7, ninit);
+  white_Out(OLED__PAGE3, all_pages);
+  oled_print("Vol: ", OLED__PAGE2, ninit);
   for (int i = 0; i < volume_level; i++) {
     oled_CS();
     gpio1__set_low(1, 25);
@@ -429,9 +453,7 @@ void display_list_of_song() {
     if (i == total_of_songs()) {
       break;
     }
-    // sprintf(list_song_without_mp3[i], strcat(" ", list_song_without_mp3[i]));
     char *song = list_song_without_mp3[i];
-    // song_name_without_dot_mp3 = remove_dot_mp3(song);
     oled_print(song, oled_page_counter, ninit);
     oled_page_counter++;
   }

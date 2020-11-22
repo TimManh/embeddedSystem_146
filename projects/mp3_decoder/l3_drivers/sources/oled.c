@@ -240,13 +240,16 @@ void horizontal_addr_mode() {
   oled__transfer_byte(0x00);
   oled__transfer_byte(0x07);
 }
-/*========================= Horizontal Scrolling Mode ========================
-*@brief:  Data will print onto screen horizontal  scrolling from right to left
-*@Note:   Please Check The Datasheet of Sequence of Operation
-          * Can be modified from left to right by reading reference on SSD1306
-          on page 31/64
-          * Require command_bus (ON)
-==============================================================================*/
+
+/* ----------------------------------------------------------------------------*/
+/*                          Horizontal Scrolling Mode                          */
+/*@brief:  Data will print onto screen horizontal  scrolling from right to left*/
+/*@Note:  -Please Check The Datasheet of Sequence of Operation                 */
+/*         -Can be modified from left to right by reading reference on SSD1306 */
+/*          on page 31/64                                                      */
+/*         -Require command_bus (ON)                                           */
+/* ----------------------------------------------------------------------------*/
+
 void horizontal_scrolling(page_start begin_page, page_start end_page) {
   oled_CS();
   {
@@ -263,22 +266,27 @@ void horizontal_scrolling(page_start begin_page, page_start end_page) {
   }
   oled_DS();
 }
-// FIXME
+
+/* -------------------------------------------------------------------------- */
+/*                                Zoom in Mode                                */
+/* @brief: this function help to zoom in the whole screen                     */
+/* @para: NA                                                                  */
+/* -------------------------------------------------------------------------- */
+
 void zoom_in_mode() {
   oled_CS();
   {
     oled_setC_bus();
     oled__transfer_byte(0xD6);
-    oled__transfer_byte(0x01); // set blinking mode and 16 frames
-    // oled__transfer_byte(0x00 | begin_page); // start Page 0
-    // oled__transfer_byte(0xFF);              // 2 frames
-    // oled__transfer_byte(0x00 | end_page);   // end Page 7
-    // oled__transfer_byte(0x00);              // dummy byte 00
-    // oled__transfer_byte(0xFF);              // dummy byte FF
-    // oled__transfer_byte(0x2F);              // activate scrolling
+    oled__transfer_byte(0x01); // zoom in mode
   }
   oled_DS();
 }
+/* -------------------------------------------------------------------------- */
+/*                                Zoom in Mode                                */
+/* @brief: this function help to turn off zoom in mode                        */
+/* @para: NA                                                                  */
+/* -------------------------------------------------------------------------- */
 void disable_zoom_in_mode() {
   oled_CS();
   {
