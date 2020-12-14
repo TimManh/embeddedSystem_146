@@ -163,8 +163,6 @@ void reader_task() {
   UINT br; // binary
   while (1) {
     if (xQueueReceive(music_Q, song_name, portMAX_DELAY)) {
-      // xTaskCreate(pause_task, "pause", (1024 * 4) / sizeof(void *), NULL, PRIORITY_MEDIUM, &play_pause_handle);
-      // int distance = 1;
       white_Out(OLED__PAGE0, single_page);
       oled_print("Now Playing:", OLED__PAGE0, ninit);
       /* -------------------------------- OPEN FILE ------------------------------- */
@@ -192,7 +190,6 @@ void reader_task() {
         /* --------------------------- Auto play next song -------------------------- */
         if (br == 0) {
           metamp3 = true; // read meta
-          // distance = 1;
           xSemaphoreGive(next);
         }
         f_close(&file);
@@ -212,10 +209,9 @@ void pause_task() {
       char *point_to_year = year_for_pause;
       if (play_pause) {
         white_Out(OLED__PAGE0, all_pages);
-        // deactivate_horizontal_scrolling();
+        deactivate_horizontal_scrolling();
         oled_print("Paused", OLED__PAGE0, ninit);
         oled_print(point_to_title, OLED__PAGE1, ninit);
-        horizontal_scrolling(OLED__PAGE1, OLED__PAGE1);
         oled_print(point_to_artist, OLED__PAGE2, ninit);
         oled_print(point_to_genre, OLED__PAGE3, ninit);
         oled_print(point_to_year, OLED__PAGE4, ninit);
@@ -253,7 +249,6 @@ volatile bool debounce = true;
 void next_song_task() {
   while (1) {
     if (xSemaphoreTake(next, portMAX_DELAY)) {
-      // vTaskResume(play_pause_handle);
       if (!gpio1__get_level(1, 15)) {
         metamp3 = true;
         int total = total_of_songs();
@@ -279,8 +274,6 @@ void next_song_task() {
 void previous_song_task() {
   while (1) {
     if (xSemaphoreTake(previous, portMAX_DELAY)) {
-      // vTaskResume(play_pause_handle);
-
       metamp3 = true;
       int total = total_of_songs();
       if (cursor_main == 0) {
@@ -349,14 +342,12 @@ void move_down_task() {
          * cause this cursor will be move down again when we press the button combination
          * a hacky way is to deduct by 1 to move back to our intended location
          * */
-        // vTaskResume(play_pause_handle);
+        vTaskResume(player_handle);
         char *song = get_songs_name(cursor_main - 1);
         xQueueSend(music_Q, song, portMAX_DELAY);
       }
 
       if (gpio1__get_level(1, 15)) {
-        // vTaskSuspend(player_handle);
-        // vTaskDelete(play_pause_handle);
         cursor_main = 0;
         cursor_for_scrolling = 0;
         clear_number_of_page(8);
